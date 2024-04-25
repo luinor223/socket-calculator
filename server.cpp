@@ -14,30 +14,31 @@
 using namespace std;
 vector<pair<int, pthread_t>> threads;
 
-bool parse(string& tokens)
+bool parse(string &tokens)
 {
-    //Remove spaces
+    // Remove spaces
     string temp = "";
     for (int i = 0; i < tokens.size(); i++)
     {
-        if (tokens[i] == ' ') continue;
+        if (tokens[i] == ' ')
+            continue;
         temp += tokens[i];
     }
     tokens = temp;
     temp = "";
 
-    //Parse
+    // Parse
     int brackets_count = 0;
     for (int i = 0; i < tokens.size(); i++)
     {
-        //Check for brackets, add * if needed
+        // Check for brackets, add * if needed
         if (tokens[i] == '(')
         {
             brackets_count++;
-            if (string("*/)").find(tokens[i+1]) != string::npos)
+            if (string("*/)").find(tokens[i + 1]) != string::npos)
                 return false;
-                
-            if (i > 0 && (isdigit(tokens[i-1]) || tokens[i-1] == ')'))
+
+            if (i > 0 && (isdigit(tokens[i - 1]) || tokens[i - 1] == ')'))
                 temp += '*';
             temp += tokens[i];
         }
@@ -47,17 +48,18 @@ bool parse(string& tokens)
             if (brackets_count < 0)
                 return false;
             temp += tokens[i];
-            if (i < tokens.size() - 1 && isdigit(tokens[i+1]))
+            if (i < tokens.size() - 1 && isdigit(tokens[i + 1]))
                 temp += '*';
         }
-        //Check for multiple consecutive signs
+        // Check for multiple consecutive signs
         else if (string("+-").find(tokens[i]) != string::npos)
         {
-            if (i == tokens.size() - 1) return false;
+            if (i == tokens.size() - 1)
+                return false;
             int sign = 1;
             while (i < tokens.size() && string("+-").find(tokens[i]) != string::npos)
             {
-                sign *= (int)(','-tokens[i]);
+                sign *= (int)(',' - tokens[i]);
                 i++;
             }
             i--;
@@ -67,7 +69,7 @@ bool parse(string& tokens)
         {
             if (i == 0 || i == tokens.size() - 1)
                 return false;
-            if (string("*/").find(tokens[i+1]) != string::npos)
+            if (string("*/").find(tokens[i + 1]) != string::npos)
                 return false;
             temp += tokens[i];
         }
@@ -83,9 +85,9 @@ bool parse(string& tokens)
 
     for (int i = 0; i < tokens.size(); i++)
     {
-        if (tokens[i] == '+' && (i == 0 || string("*/(").find(tokens[i-1]) != string::npos))
+        if (tokens[i] == '+' && (i == 0 || string("*/(").find(tokens[i - 1]) != string::npos))
             continue;
-        if (tokens[i] == '-' && (i == 0 || string("*/(").find(tokens[i-1]) != string::npos))
+        if (tokens[i] == '-' && (i == 0 || string("*/(").find(tokens[i - 1]) != string::npos))
         {
             temp += 'u';
             continue;
@@ -94,7 +96,6 @@ bool parse(string& tokens)
     }
     tokens = temp;
     return true;
-
 }
 
 int precedence(char c)
@@ -105,7 +106,7 @@ int precedence(char c)
         return 2;
     if (c == 'u')
         return 3;
-    
+
     return 0;
 }
 
@@ -115,7 +116,7 @@ string InfixToRpn(string tokens)
     stack<char> op;
     for (int i = 0; i < tokens.size(); i++)
     {
-        
+
         if (isdigit(tokens[i]))
         {
             while (isdigit(tokens[i]))
@@ -142,7 +143,7 @@ string InfixToRpn(string tokens)
         {
             while (!op.empty() && precedence(tokens[i]) <= precedence(op.top()))
             {
-                
+
                 output += op.top();
                 output += ' ';
                 op.pop();
@@ -161,7 +162,7 @@ string InfixToRpn(string tokens)
 
 double evalRpn(string tokens)
 {
-    stack <double> result;
+    stack<double> result;
     for (int i = 0; i < tokens.size(); i++)
     {
         if (tokens[i] == ' ')
@@ -208,11 +209,12 @@ double evalRpn(string tokens)
 
 void *connection_handler(void *p_client_sock_fd)
 {
-    int client_sockfd = *(int*)p_client_sock_fd, test;
-    char buffer[1024] = { 0 };
+    int client_sockfd = *(int *)p_client_sock_fd, test;
+    char buffer[1024] = {0};
     string msg;
 
-    while (1) {
+    while (1)
+    {
         test = read(client_sockfd, buffer, 1024);
         if (test == -1)
         {
@@ -221,24 +223,29 @@ void *connection_handler(void *p_client_sock_fd)
         }
         cout << "Received expression from client " << client_sockfd << ": " << buffer << endl;
 
-        if (strcmp(buffer, "L") == 0) {
+        if (strcmp(buffer, "L") == 0)
+        {
             cout << "Client number " << client_sockfd << " has left.\n";
             break;
         }
-        
+
         string tokens = buffer;
 
-        if (!parse(tokens)) {
+        if (!parse(tokens))
+        {
             msg = "Syntax error";
         }
-        else try {
-            int result = evalRpn(InfixToRpn(tokens));
-            msg = to_string(result);
-        }
-        catch (const invalid_argument& e) {
-            msg = e.what();
-        }
-        
+        else
+            try
+            {
+                int result = evalRpn(InfixToRpn(tokens));
+                msg = to_string(result);
+            }
+            catch (const invalid_argument &e)
+            {
+                msg = e.what();
+            }
+
         strcpy(buffer, msg.c_str());
         test = write(client_sockfd, buffer, strlen(buffer));
         if (test == -1)
@@ -249,8 +256,10 @@ void *connection_handler(void *p_client_sock_fd)
         cout << "Message sent to client " << client_sockfd << ": " << buffer << endl;
     }
 
-    for (vector<pair<int, pthread_t>>::iterator i = threads.begin(); i != threads.end(); i++){
-        if ((*i).first == client_sockfd){
+    for (vector<pair<int, pthread_t>>::iterator i = threads.begin(); i != threads.end(); i++)
+    {
+        if ((*i).first == client_sockfd)
+        {
             threads.erase(i);
             break;
         }
@@ -258,24 +267,26 @@ void *connection_handler(void *p_client_sock_fd)
     return NULL;
 }
 
-int main(){
+int main()
+{
     int server_sockfd, client_sockfd;
-	socklen_t server_len, client_len;
-	struct sockaddr_in server_address;
-	struct sockaddr_in client_address;
-	
-	server_sockfd = socket( AF_INET, SOCK_STREAM, 0 );
-	
-	server_address.sin_family = AF_INET;
-	server_address.sin_addr.s_addr = inet_addr("127.0.0.1");
-	server_address.sin_port = htons(9734);
-	server_len = sizeof(server_address);
+    socklen_t server_len, client_len;
+    struct sockaddr_in server_address;
+    struct sockaddr_in client_address;
 
-	bind(server_sockfd, (struct sockaddr *)&server_address, server_len);
-	listen(server_sockfd, 30);
+    server_sockfd = socket(AF_INET, SOCK_STREAM, 0);
+
+    server_address.sin_family = AF_INET;
+    server_address.sin_addr.s_addr = inet_addr("127.0.0.1");
+    server_address.sin_port = htons(9734);
+    server_len = sizeof(server_address);
+
+    bind(server_sockfd, (struct sockaddr *)&server_address, server_len);
+    listen(server_sockfd, 30);
     cout << "Server is up and running.\n";
-	while (true) {
-        client_sockfd = accept(server_sockfd, (struct sockaddr*)&client_address, &client_len);
+    while (true)
+    {
+        client_sockfd = accept(server_sockfd, (struct sockaddr *)&client_address, &client_len);
         if (client_sockfd < 0)
         {
             cout << "Client connection error" << endl;
@@ -283,8 +294,8 @@ int main(){
         }
         cout << "Client number " << client_sockfd << " has entered.\n";
         pthread_t thread;
-        pthread_create(&thread, NULL, &connection_handler, (int *) &client_sockfd);
+        pthread_create(&thread, NULL, &connection_handler, (int *)&client_sockfd);
         threads.push_back({client_sockfd, thread});
-	}
-	return 0;
+    }
+    return 0;
 }
